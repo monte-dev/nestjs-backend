@@ -9,15 +9,21 @@ import {
   ParseUUIDPipe,
   NotFoundException,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDTO } from './dtos/create-book.dto';
 import { UpdateBookDTO } from './dtos/update-book.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { UsersService } from 'src/users/users.service';
+import { LikeBookDTO } from './dtos/like-book.dto';
 
 @Controller('books')
 export class BooksController {
-  constructor(private booksService: BooksService) {}
+  constructor(
+    private booksService: BooksService,
+    private usersService: UsersService,
+  ) {}
 
   @Get('/')
   getAll() {
@@ -58,6 +64,24 @@ export class BooksController {
     const book = await this.booksService.getById(id);
     if (!book) throw new NotFoundException('Book not found in a database...');
     await this.booksService.update(id, bookData);
+    return { success: true };
+  }
+
+  @Post('/like')
+  @UseGuards(JwtAuthGuard)
+  async bookLike(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() likeBookDto: LikeBookDTO,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    const bookId = likeBookDto.bookId;
+
+    if (!(await this.booksService.getById(bookId))) {
+      throw new NotFoundException('Book not found');
+    }
+
+    await this.booksService.likeBook(bookId, userId);
     return { success: true };
   }
 }

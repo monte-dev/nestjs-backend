@@ -1,7 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
-import { Book } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Book, UserOnBooks } from '@prisma/client';
 
+import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class BooksService {
   constructor(private prismaService: PrismaService) {}
@@ -48,6 +48,28 @@ export class BooksService {
     } catch (error) {
       if (error.code === 'P2002')
         throw new ConflictException('Title is already taken');
+      throw error;
+    }
+  }
+
+  public async likeBook(likedBookId: string, userId: string) {
+    try {
+      return await this.prismaService.book.update({
+        where: { id: likedBookId },
+        data: {
+          users: {
+            create: {
+              user: {
+                connect: { id: userId },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('User already liked this book');
+      }
       throw error;
     }
   }

@@ -26,6 +26,7 @@ export class UsersController {
     if (!user) throw new NotFoundException('User not found in database');
     return user;
   }
+
   @Delete(':id')
   @UseGuards(AdminAuthGuard)
   @UseGuards(JwtAuthGuard)
